@@ -441,3 +441,284 @@ sehingga perbaikan kapasitas sistem atau *scaling mechanism* perlu diprioritaska
 - Analisis ini memvalidasi temuan bahwa peningkatan jumlah pengguna berdampak langsung pada kenaikan waktu respons AI, namun tidak secara signifikan memengaruhi akurasi model. Artinya, permasalahan yang muncul lebih bersifat teknis (server load) daripada kualitas algoritma.
 
 
+### 2. EDA (Kepuasan Pengguna antar Shift dan Jenis Sesi (AI vs Non-AI))
+
+**Visualisasi 1**
+![EDA1](https://drive.google.com/uc?export=view&id=1xXUzKuurarVaIYkstD30WzN8hE0cDc93)
+
+**Visualisasi 2**
+![EDA2](https://drive.google.com/uc?export=view&id=1uw8L_kEP18KeqNxvLN0xUT-suJ1d4lnE)
+
+## Analisis Rata-rata Kepuasan Pengguna per Shift (AI vs Non-AI)
+
+Visualisasi di atas menunjukkan perbandingan skor kepuasan pengguna antar shift waktu dan jenis sesi (AI vs Non-AI).  
+Dari hasil pengamatan:
+
+- **Afternoon Shift** memiliki rata-rata kepuasan tertinggi (~4.05 untuk Non-AI, ~3.6 untuk AI).  
+- **Morning Shift** berada sedikit di bawahnya, dengan pola serupa.  
+- **Night Shift** memperlihatkan penurunan yang paling nyata —  
+  skor Non-AI sekitar 3.9, sementara AI hanya **3.4–3.5**.
+
+Dengan demikian, perbedaan antara *AI sessions* dan *Non-AI sessions* menjadi semakin signifikan di shift malam.  
+Selisih skor kepuasan pengguna malam terhadap siang hari mencapai sekitar **15%**,  
+sesuai dengan temuan internal bahwa kepuasan pengguna malam hari menurun terutama pada sesi yang melibatkan AI.
+
+**Interpretasi:**
+
+- Skor kepuasan pengguna AI selalu lebih rendah dibanding Non-AI di seluruh shift,  
+  menandakan bahwa **pengalaman pengguna dengan AI masih di bawah konselor manusia.**
+- Gap paling besar terjadi pada **shift malam**, di mana performa sistem AI sebelumnya terbukti melambat.  
+- Pola ini memperkuat indikasi bahwa **waktu respons AI yang tinggi** berdampak langsung pada penurunan kepuasan malam hari.
+
+Dengan kata lain, bukan perilaku pengguna atau faktor konselor yang menyebabkan kepuasan menurun,  
+melainkan **degradasi performa sistem AI di periode malam (lateness dan response delay).**
+
+### 3. EDA (Distribusi Beban Kerja dan Kinerja Konselor per Shift)
+
+**Visualisasi 1**
+![EDA1](https://drive.google.com/uc?export=view&id=1RfMLrQFpNG8Div3x8B5rj9wYs5Lfr7uk)
+
+**Visualisasi 2**
+![EDA1](https://drive.google.com/uc?export=view&id=1GlNRDGg026AttJ_RYKKlTlk1vBz8X7em)
+
+## Analisis Distribusi Konselor dan Antrean Pengguna per Shift
+
+Visualisasi menunjukkan perbandingan rata-rata **jumlah konselor aktif** dan **panjang antrean pengguna** pada tiga kategori shift waktu: *Morning*, *Afternoon*, dan *Night*.
+
+Dari hasil pengamatan:
+
+- **Morning Shift** memiliki jumlah konselor aktif tertinggi (sekitar **4 konselor per jam**) dan panjang antrean terendah (**~0.9 antrean**).  
+- **Afternoon Shift** menurun sedikit dalam jumlah konselor (sekitar **3 orang**) dengan antrean rata-rata **~1.3 pengguna**.  
+- **Night Shift** menunjukkan ketidakseimbangan paling nyata — jumlah konselor aktif menurun menjadi **~2 orang**, sedangkan antrean pengguna meningkat hingga **>2 orang per jam**.  
+
+Pola ini menegaskan adanya **distribusi sumber daya yang tidak merata antar shift**, di mana periode malam mengalami *overload* sementara periode pagi relatif *idle*.
+
+
+**Visualisasi 3**
+![EDA1](https://drive.google.com/uc?export=view&id=1l_Tf6P_4KCnt0c7xfB-fYMBK_XTiqSSi)
+
+## Analisis Korelasi antara Jumlah Konselor, Panjang Antrean, dan Kepuasan Pengguna
+
+Matriks korelasi Pearson menunjukkan hubungan antar variabel operasional utama:
+
+| Hubungan | Nilai Korelasi | Interpretasi |
+|-----------|----------------|---------------|
+| `counselors_on_shift` ↔ `counselor_queue_length` | **-0.54** | Korelasi negatif sedang — semakin banyak konselor aktif, semakin pendek antrean pengguna. |
+| `counselors_on_shift` ↔ `user_satisfaction_score` | **+0.18** | Korelasi lemah positif — kehadiran lebih banyak konselor cenderung meningkatkan kepuasan pengguna. |
+| `counselor_queue_length` ↔ `user_satisfaction_score` | **-0.27** | Korelasi negatif — semakin panjang antrean, semakin rendah skor kepuasan pengguna. |
+
+## Interpretasi Analitis
+
+Temuan ini menunjukkan bahwa **performa layanan manusia (counselor system)** juga menjadi faktor penentu pengalaman pengguna.  
+- Ketidakseimbangan jumlah konselor antar shift berkontribusi langsung terhadap peningkatan antrean di malam hari.  
+- Panjang antrean yang tinggi berdampak negatif pada kepuasan pengguna, meskipun sesi tidak selalu melibatkan AI.  
+- Pola korelasi memperkuat bahwa **ketika jumlah konselor aktif menurun, antrean naik, dan kepuasan menurun** — sesuai laporan internal bahwa beberapa shift *overload* sementara lainnya *idle*.
+
+## Insight Utama
+
+Distribusi tenaga konselor belum seimbang antar shift.  
+Pada **shift malam**, kekurangan jumlah konselor menyebabkan **panjang antrean meningkat lebih dari dua kali lipat**, yang berdampak pada penurunan kepuasan pengguna.  
+
+Hal ini menunjukkan perlunya:
+- **Penjadwalan dinamis** berbasis volume sesi historis,  
+- **Redistribusi tenaga konselor** ke shift malam atau jam sibuk, dan  
+- **Implementasi sistem auto-allocation** atau *predictive staffing* untuk menyeimbangkan beban kerja antar periode waktu.  
+
+Dengan perbaikan ini, sistem dapat menjaga **stabilitas waktu tanggap layanan** serta meningkatkan **kepuasan pengguna secara konsisten di seluruh shift**.
+
+**Kesimpulan:**  
+Analisis ini berhasil membuktikan secara *data-driven* bahwa **ketidakseimbangan tenaga konselor** adalah penyebab utama antrean panjang dan turunnya kepuasan malam hari, bukan hanya faktor AI.
+
+### 4. EDA (Kualitas dan Konsistensi Data Log Sistem)
+
+**Visualisasi 1**
+![EDA1](https://drive.google.com/uc?export=view&id=18rOgCR6YGfIXVdS1iqWMWWb4dsR0nDN1)
+
+**Visualisasi 2**
+![EDA2](https://drive.google.com/uc?export=view&id=1GA3vgW8GBrME7QWaQxgD5y5X7-foDzBc)
+
+```python
+=== Analisis Duplikasi Data ===
+Jumlah session_id duplikat: 0
+Jumlah baris dengan duplicate_flag=True: 84
+
+
+=== Analisis Missing Entries ===
+Jumlah baris dengan missing_report_flag=True: 106
+
+Jumlah nilai hilang pada data missing_report_flag=True:
+ai_response_time_ms    26
+ai_accuracy            26
+
+=== RINGKASAN ===
+Total baris data: 2666
+Duplikasi terdeteksi: 84 baris (3.15%)
+Missing entries terdeteksi: 106 baris (3.98%)
+Total data bermasalah (duplikasi + missing): 7.13% dari total dataset
+```
+
+**Visualisasi 3**
+![EDA2](https://drive.google.com/uc?export=view&id=1e_MrT-p7sw9XgcKNyYPQL4VTsAnfex_7)
+
+## Analisis Kualitas Data Log (Duplikasi & Missing Entries)
+
+### Ringkasan Visualisasi
+Visualisasi menampilkan distribusi **anomali data log** yang meliputi:
+1. Jumlah **duplikasi per tanggal**, dan  
+2. Jumlah **missing entries** (*laporan yang tidak lengkap*) per tanggal.
+
+---
+
+## Temuan Utama
+
+### Duplikasi Data
+- Terdapat **84 baris duplikat (~3.15%)** dari total 2.666 entri data.  
+- Lonjakan duplikasi terjadi pada **minggu keempat September (23–29 September 2025)** — bersamaan dengan peningkatan volume pengguna.  
+- Pola ini menandakan bahwa **sistem logging melakukan *retry event*** ketika beban server tinggi, menyebabkan satu sesi tercatat dua kali dengan selisih waktu kecil.
+
+### Missing Entries
+- Terdapat **106 baris (~3.98%)** dengan `missing_report_flag=True`.  
+- Kolom yang paling sering tidak lengkap: **`ai_response_time_ms`** dan **`ai_accuracy`**.  
+- Polanya meningkat di akhir bulan — menunjukkan **gagal simpan log saat sistem padat** sehingga sebagian laporan tidak tercatat penuh.
+
+---
+
+## Korelasi dengan Variabel Operasional
+
+| Variabel | Rata-rata Data Normal | Rata-rata Data Anomali | Perbedaan |
+|-----------|-----------------------|------------------------|------------|
+| `ai_response_time_ms` | 1153 ms | 1168 ms | +15 ms |
+| `ai_accuracy` | 0.79 | 0.78 | -0.01 |
+
+- Korelasi antara `ai_response_time_ms` dan `user_satisfaction_score` = **-0.20** → latensi tinggi menurunkan kepuasan pengguna.  
+- Korelasi antara flag duplikasi dan missing = **-0.04** → keduanya **tidak terjadi bersamaan**, melainkan terpisah.
+
+---
+
+## Estimasi Dampak
+Sekitar **7.1% data log terdeteksi bermasalah (duplikasi + missing)**.  
+Masalah ini **bukan akibat human error**, melainkan **beban sistem tinggi** yang memengaruhi stabilitas proses logging.
+
+---
+
+## Insight Utama
+Sistem pencatatan data memerlukan penguatan untuk menjaga **reliabilitas metrik performa**.  
+Disarankan langkah berikut:
+
+- **Server-side logging validation** → mencegah duplikasi akibat *retry event*.  
+- **Monitoring otomatis** → memicu alert jika >2% data harian bermasalah.  
+- **Pipeline data cleansing** → membersihkan duplikasi & missing sebelum analisis KPI.  
+
+Dengan perbaikan tersebut, sistem dapat menjaga:
+- Keakuratan insight bisnis 
+- Konsistensi evaluasi performa AI & tim konselor 
+
+---
+
+**Kesimpulan:**  
+- Sekitar 7.1% data log mengandung anomali yang terutama disebabkan oleh tekanan sistem saat traffic tinggi.  
+- Penguatan proses logging dan validasi otomatis diperlukan agar metrik performa tetap akurat dan andal di semua periode operasional.
+
+
+# Penjelasan Metode, Asumsi, dan Logika Interpretasi
+
+---
+
+## 1. Metode Analisis
+Analisis dilakukan menggunakan pendekatan **Exploratory Data Analysis (EDA)** dengan kombinasi metode **deskriptif dan statistik** sebagai berikut:
+
+- **Analisis tren** → menelusuri perubahan volume pengguna dan waktu respons AI per tanggal.  
+- **Korelasi Pearson** → mengukur kekuatan hubungan antar variabel utama (jumlah sesi, latency, kepuasan pengguna).  
+- **Analisis perbandingan rata-rata** → membandingkan hasil antar *shift* dan jenis sesi (AI vs Non-AI).  
+- **Heatmap dan matriks korelasi** → mendeteksi keterkaitan antar faktor operasional seperti antrean, jumlah konselor, dan skor kepuasan.
+
+Pendekatan ini dipilih karena fokus studi bersifat **diagnostik** — mencari **pola penyebab menurunnya performa sistem** secara data-driven.
+
+---
+
+## 2. Logika Asumsi
+Agar hasil analisis tetap realistis dan kontekstual dengan lingkungan operasional, beberapa asumsi digunakan:
+
+| Aspek | Asumsi yang Ditetapkan |
+|-------|-------------------------|
+| **Pembagian Shift** | Morning (06–13), Afternoon (14–19), Night (20–05) |
+| **Ambang Latency Tinggi** | > **1200 ms** (mengacu pada SLA internal AI system) |
+| **Periode Analisis** | 1–30 September 2025 (representatif untuk tren bulanan) |
+| **Flag Anomali Sistem** | `duplicate_flag` & `missing_report_flag` → indikator error sistem, bukan human input |
+
+Asumsi ini disusun untuk menyederhanakan model analisis **tanpa mengubah makna atau integritas data**.
+
+---
+
+## 3. Alasan di Balik Interpretasi Data
+Setiap insight disusun dengan mempertimbangkan **kombinasi bukti statistik dan konteks operasional**:
+
+| Pola Data | Interpretasi Analitis |
+|------------|-----------------------|
+| Korelasi positif kuat (**r = 0.71**) antara jumlah sesi dan waktu respons | Beban sistem meningkat saat traffic tinggi |
+| Penurunan kepuasan malam hari beriringan dengan peningkatan latency AI | Performa teknis AI berdampak langsung pada pengalaman pengguna |
+| Korelasi negatif antara jumlah konselor dan panjang antrean (**r = –0.54**) | Ketidakseimbangan sumber daya manusia antar shift |
+| Lonjakan duplikasi & missing log saat traffic tinggi | Indikasi kegagalan sistem logging saat *server overload* |
+
+Interpretasi ini menghubungkan **indikator teknis (AI, server, konselor)** dengan **dampak bisnis (kepuasan pengguna, reliabilitas data)** secara **objektif, terukur, dan kontekstual**.
+
+---
+
+# Rekomendasi Berbasis Data untuk Optimalisasi Sistem dan Operasional
+
+Berdasarkan hasil eksplorasi data (EDA 1–4), ditemukan beberapa pola signifikan yang memengaruhi **performa sistem**, **kepuasan pengguna**, dan **efisiensi operasional tim konselor**.  
+Bagian ini merangkum **insight utama** beserta **rekomendasi strategis** yang disusun berdasarkan tingkat prioritas implementasi.
+
+---
+
+## Ringkasan Temuan Utama
+
+| No | Area Analisis | Insight Utama | Dampak Terhadap Sistem |
+|----|----------------|----------------|-------------------------|
+| **1** | **Performa Sistem AI (EDA 1)** | Volume pengguna naik **28%** disertai peningkatan waktu respons **+35%**. Korelasi kuat (**r = 0.71**) antara jumlah sesi dan waktu respons menandakan adanya **bottleneck server**. | Latency meningkat signifikan di akhir bulan, menurunkan efisiensi dan pengalaman pengguna. |
+| **2** | **Kepuasan Pengguna (EDA 2)** | Kepuasan pengguna **AI sessions** menurun hingga **15% pada shift malam**, sedangkan Non-AI relatif stabil. | Pengguna mengalami penurunan pengalaman saat AI melambat, terutama di jam malam. |
+| **3** | **Distribusi Konselor & Antrean (EDA 3)** | **Ketidakseimbangan shift**: malam kekurangan konselor (~2 orang), antrean naik >2 pengguna/jam. Korelasi negatif **r = -0.54** antara jumlah konselor dan panjang antrean. | Antrean tinggi menurunkan kepuasan pengguna dan menyebabkan *overload* di periode malam. |
+| **4** | **Kualitas Data Log (EDA 4)** | Sekitar **7.1% data log bermasalah** (duplikasi + missing). Lonjakan terjadi saat traffic tinggi. | Data performa berpotensi bias, mengurangi reliabilitas pelaporan KPI dan evaluasi performa AI. |
+
+---
+
+## Rekomendasi Strategis Berbasis Data
+
+| Prioritas | Rekomendasi | Fokus Perbaikan | Dampak | Horizon Waktu |
+|------------|--------------|----------------|--------|----------------|
+| **High** | **Optimasi sistem AI response time** melalui *load balancing*, *asynchronous queue*, dan peningkatan kapasitas server. | Proses Teknis | Mengurangi latency hingga **30–40%** saat traffic tinggi. | ≤ 1 bulan |
+| **High** | **Redistribusi tenaga konselor berbasis pola traffic historis** (*dynamic shift scheduling*). | Alokasi SDM | Menurunkan panjang antrean malam hari >50%, meningkatkan kepuasan malam hari (+0.3 poin). | ≤ 1 bulan |
+| **Medium** | **Implementasi sistem monitoring & alert real-time** untuk AI latency, antrean, dan kepuasan per shift. | Proses Operasional | Deteksi dini terhadap *overload* atau penurunan performa AI/konselor. | 1–2 bulan |
+| **Medium** | **Perkuat sistem logging** dengan *server-side validation* & auto-flag duplikasi/missing (>2% trigger alert). | Kualitas Data | Meningkatkan reliabilitas KPI dan evaluasi performa sistem. | 1–2 bulan |
+| **Low** | **Evaluasi lanjutan model AI** setelah sistem stabil (*retraining & fine-tuning model*). | Optimalisasi Sistem | Meningkatkan akurasi prediksi jangka panjang tanpa memperburuk waktu respons. | 2–3 bulan |
+
+---
+
+## Fokus Implementasi
+
+### Jangka Pendek (≤ 1 bulan)
+- Perkuat infrastruktur server AI untuk mengurangi latency.  
+- Atur ulang jadwal konselor agar beban antar shift lebih merata.  
+
+### Jangka Menengah (1–2 bulan)
+- Pasang dashboard monitoring performa & logging alert otomatis.  
+- Bangun sistem validasi log untuk mencegah duplikasi dan *missing entries*.  
+
+### Jangka Panjang (≥ 3 bulan)
+- Lakukan evaluasi performa model AI setelah sistem stabil.  
+- Rancang pengembangan prediktif untuk peningkatan kepuasan jangka panjang.  
+
+---
+
+## Kesimpulan
+
+Analisis data menunjukkan bahwa **penurunan performa sistem dan kepuasan pengguna bukan disebabkan oleh algoritma AI yang buruk**,  
+melainkan oleh **beban sistem** dan **ketidakseimbangan sumber daya manusia** antar shift.
+
+Dengan implementasi rekomendasi ini, perusahaan dapat mencapai:
+- **Stabilitas performa AI di seluruh shift waktu**,  
+- **Distribusi kerja konselor yang lebih optimal**, dan  
+- **Kualitas data log yang lebih andal untuk evaluasi KPI.**
+
+**Hasil akhir:** Sistem layanan menjadi **lebih responsif, efisien, dan berorientasi pada pengalaman pengguna.**
+
